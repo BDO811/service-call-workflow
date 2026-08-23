@@ -79,6 +79,15 @@ export default function WorkOrderDetail() {
     window.location.href = `mailto:${order.technicianContact || ''}?subject=${subject}&body=${body}`
   }
 
+  async function markReviewed() {
+    if (!order) return
+    await db.workOrders.update(order.id!, {
+      needsReview: false,
+      updatedAt: Date.now(),
+      activityLog: logActivity(order, 'Marked as reviewed.'),
+    })
+  }
+
   async function handleFiles(e: ChangeEvent<HTMLInputElement>) {
     const files = e.target.files
     if (!files || files.length === 0 || !order) return
@@ -141,6 +150,17 @@ export default function WorkOrderDetail() {
           </button>
         </div>
       </div>
+
+      {order.needsReview && (
+        <div className="review-banner">
+          Imported from an email{order.vendorName ? ` (${order.vendorName})` : ''} and hasn't been checked yet.
+          Verify the fields below, then{' '}
+          <button className="link-btn" onClick={markReviewed}>
+            mark reviewed
+          </button>
+          .
+        </div>
+      )}
 
       <div className="detail-grid">
         <section className="card">
@@ -224,6 +244,22 @@ export default function WorkOrderDetail() {
             {documents.length === 0 && <li className="muted">No documents attached.</li>}
           </ul>
         </section>
+
+        {order.source === 'email' && (
+          <section className="card">
+            <h2>Source Email</h2>
+            <dl className="detail-list">
+              <dt>Vendor</dt>
+              <dd>{order.vendorName || '—'}</dd>
+              <dt>Vendor Email</dt>
+              <dd>{order.vendorEmail || '—'}</dd>
+            </dl>
+            <details>
+              <summary className="link-btn">View raw email</summary>
+              <pre className="report-preview">{order.rawEmailText}</pre>
+            </details>
+          </section>
+        )}
 
         <section className="card">
           <h2>Activity Log</h2>

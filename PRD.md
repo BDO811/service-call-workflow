@@ -62,3 +62,21 @@ Customer list: name, phone, email, service address, job history (linked work ord
 ## 9. Success criteria
 - Can create a service order, see it appear in Work Orders and on the Customer's profile, move it through every status, attach a document, generate and "send" a report, all without a page reload losing data (persisted across browser sessions).
 - App builds and deploys cleanly to GitHub Pages via CI on push to `main`.
+
+## 10. Addendum — Email ingestion (added 2026-08-23)
+
+**Goal:** dispatch emails from vendors (e.g. Armadillo Home Solutions) land automatically as reviewable work orders, without manual re-typing.
+
+**Decisions (confirmed with Amit 2026-08-23):**
+- **Inbox**: not connected yet — Amit will wire up the actual forwarding rule later. Everything on the processing side is built and ready ahead of that.
+- **Processing mode**: always-on backend, not in-app polling. A small Cloudflare Worker parses and stores incoming emails the instant they arrive, independent of whether the app is open. Chosen over pure client-side polling because "process the moment it arrives" was the explicit requirement.
+- **Parser scope**: general-purpose from day one, not Armadillo-only. Built as a label/value + heuristic extractor that degrades gracefully (flags `needsReview`) rather than a rigid per-vendor template.
+
+**Architecture — sync, not migrate:** The existing local-first app (Dexie/IndexedDB, this PRD's original v1 design) stays exactly as it is and remains the system of record for day-to-day use. The Worker backend does **not** replace it. Instead:
+1. Inbound email → Cloudflare Email Routing → Worker `email()` handler → general-purpose parser → row written to a D1 table `inbox_orders` (raw text retained, structured fields extracted, `needsReview` flag set if core fields are missing/ambiguous).
+2. The frontend, on load and periodically while open, calls the Worker's `/api/inbox-orders` endpoint, pulls any new rows, and creates/updates the matching Customer + WorkOrder in local Dexie (`source: 'email'`, vendor name/email captured, `needsReview` carried over, raw email text preserved for audit), then acks the row so it isn't re-imported.
+3. This keeps the always-on guarantee (parsing happens the instant the email arrives, laptop closed or not) while avoiding a full rewrite of the already-shipped, tested app.
+
+**Security note:** the frontend is a public, unauthenticated static site on GitHub Pages. Once real customer PII (names, phones, addresses) starts flowing through a backend that page talks to, an open API would leak that data to anyone who finds the URL. A lightweight shared-password gate (Worker-issued token, checked on every API call) was added to close that gap. This is not full multi-user auth — it's a single shared password appropriate for a single-admin internal tool — noted here so it isn't mistaken for something stronger later.
+
+**Deploy dependency:** deploying the Worker requires a Cloudflare account login (`wrangler login`) or an API token — Claude cannot create accounts or complete interactive OAuth on Amit's behalf, so this step is Amit's to run. See README for exact commands.

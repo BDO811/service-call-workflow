@@ -9,6 +9,7 @@ import WorkOrders from './pages/WorkOrders'
 import WorkOrderDetail from './pages/WorkOrderDetail'
 import Customers from './pages/Customers'
 import CustomerDetail from './pages/CustomerDetail'
+import EmailSync from './pages/EmailSync'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -21,6 +22,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="orders/:id" element={<WorkOrderDetail />} />
           <Route path="customers" element={<Customers />} />
           <Route path="customers/:id" element={<CustomerDetail />} />
+          <Route path="email-sync" element={<EmailSync />} />
         </Route>
       </Routes>
     </HashRouter>

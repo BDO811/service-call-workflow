@@ -103,6 +103,12 @@ export default function WorkOrders() {
                       </Link>
                       <div className="kanban-card-sub">{customerName(o.customerId)}</div>
                       {o.technicianName && <div className="kanban-card-tech">Tech: {o.technicianName}</div>}
+                      {o.source === 'email' && (
+                        <div className="kanban-card-badges">
+                          <span className="badge badge-email">{o.vendorName || 'Email'}</span>
+                          {o.needsReview && <span className="badge badge-review">Needs Review</span>}
+                        </div>
+                      )}
                     </div>
                   ))}
               </div>
@@ -117,6 +123,7 @@ export default function WorkOrders() {
               <th>Customer</th>
               <th>Covered Item</th>
               <th>Status</th>
+              <th>Source</th>
               <th>Technician</th>
               <th>Updated</th>
             </tr>
@@ -134,13 +141,21 @@ export default function WorkOrders() {
                 <td>
                   <span className={`status-pill status-${o.status.replace(/\s+/g, '-')}`}>{o.status}</span>
                 </td>
+                <td>
+                  {o.source === 'email' ? (
+                    <span className="badge badge-email">{o.vendorName || 'Email'}</span>
+                  ) : (
+                    '—'
+                  )}
+                  {o.needsReview && <span className="badge badge-review">Needs Review</span>}
+                </td>
                 <td>{o.technicianName || '—'}</td>
                 <td>{new Date(o.updatedAt).toLocaleString()}</td>
               </tr>
             ))}
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={6} className="muted">
+                <td colSpan={7} className="muted">
                   No matching work orders.
                 </td>
               </tr>

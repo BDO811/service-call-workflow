@@ -518,6 +518,89 @@ hr {
   }
 }
 
+/* Auth gate */
+.auth-gate {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+}
+
+.auth-form {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 28px;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auth-form h1 {
+  font-size: 18px;
+  margin: 0;
+}
+
+.auth-form input {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 9px 12px;
+  font-size: 14px;
+}
+
+.auth-error {
+  color: var(--danger);
+  font-size: 13px;
+  margin: 0;
+}
+
+/* Email source badges */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-right: 4px;
+  white-space: nowrap;
+}
+.badge-email {
+  background: #e6e9fb;
+  color: #2f3aa3;
+}
+.badge-review {
+  background: #fdeae5;
+  color: #a3392f;
+}
+
+.kanban-card-badges {
+  margin-top: 6px;
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.review-banner {
+  background: #fdeae5;
+  border: 1px solid #f3c6bd;
+  color: #7a2a20;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+.review-banner .link-btn {
+  color: #7a2a20;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+details summary {
+  cursor: pointer;
+}
+
 @media print {
   .topbar,
   .page-header,

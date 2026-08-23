@@ -1,0 +1,21 @@
+{
+  "name": "service-call-workflow-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate:local": "wrangler d1 execute service-call-workflow-db --local --file=./migrations/0001_init.sql",
+    "db:migrate:remote": "wrangler d1 execute service-call-workflow-db --remote --file=./migrations/0001_init.sql",
+    "test:parser": "node --experimental-strip-types src/parser.test.ts"
+  },
+  "dependencies": {
+    "postal-mime": "^2.3.2"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260820.1",
+    "typescript": "^5.6.0",
+    "wrangler": "^4.20.0"
+  }
+}

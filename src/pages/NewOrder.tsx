@@ -73,6 +73,11 @@ export default function NewOrder() {
       createdAt: now,
       updatedAt: now,
       activityLog: [{ ts: now, note: 'Service order created.' }],
+      source: 'manual',
+      vendorName: '',
+      vendorEmail: '',
+      needsReview: false,
+      rawEmailText: '',
     })
 
     navigate(`/orders/${orderId}`)
