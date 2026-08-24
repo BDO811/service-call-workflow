@@ -16,12 +16,12 @@ export function clearToken() {
   localStorage.removeItem(TOKEN_KEY)
 }
 
-export async function login(password: string): Promise<boolean> {
+export async function login(email: string, password: string): Promise<boolean> {
   if (!API_BASE) return false
   const res = await fetch(`${API_BASE}/api/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ password }),
+    body: JSON.stringify({ email, password }),
   })
   if (!res.ok) return false
   const { token } = (await res.json()) as { token: string }

@@ -15,20 +15,27 @@ async function hmac(secret: string, message: string): Promise<string> {
     .replace(/=+$/, '')
 }
 
-export async function issueToken(secret: string): Promise<string> {
-  const expires = Date.now() + TOKEN_TTL_MS
-  const sig = await hmac(secret, String(expires))
-  return `${expires}.${sig}`
+export interface TokenIdentity {
+  email: string
 }
 
-export async function verifyToken(secret: string, token: string | null): Promise<boolean> {
-  if (!token) return false
-  const [expiresStr, sig] = token.split('.')
-  if (!expiresStr || !sig) return false
+export async function issueToken(secret: string, email: string): Promise<string> {
+  const expires = Date.now() + TOKEN_TTL_MS
+  const payload = `${expires}.${encodeURIComponent(email)}`
+  const sig = await hmac(secret, payload)
+  return `${payload}.${sig}`
+}
+
+export async function verifyToken(secret: string, token: string | null): Promise<TokenIdentity | null> {
+  if (!token) return null
+  const parts = token.split('.')
+  if (parts.length !== 3) return null
+  const [expiresStr, emailEnc, sig] = parts
   const expires = Number(expiresStr)
-  if (!Number.isFinite(expires) || expires < Date.now()) return false
-  const expectedSig = await hmac(secret, expiresStr)
-  return expectedSig === sig
+  if (!Number.isFinite(expires) || expires < Date.now()) return null
+  const expectedSig = await hmac(secret, `${expiresStr}.${emailEnc}`)
+  if (expectedSig !== sig) return null
+  return { email: decodeURIComponent(emailEnc) }
 }
 
 export function extractBearerToken(request: Request): string | null {

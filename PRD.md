@@ -77,6 +77,17 @@ Customer list: name, phone, email, service address, job history (linked work ord
 2. The frontend, on load and periodically while open, calls the Worker's `/api/inbox-orders` endpoint, pulls any new rows, and creates/updates the matching Customer + WorkOrder in local Dexie (`source: 'email'`, vendor name/email captured, `needsReview` carried over, raw email text preserved for audit), then acks the row so it isn't re-imported.
 3. This keeps the always-on guarantee (parsing happens the instant the email arrives, laptop closed or not) while avoiding a full rewrite of the already-shipped, tested app.
 
-**Security note:** the frontend is a public, unauthenticated static site on GitHub Pages. Once real customer PII (names, phones, addresses) starts flowing through a backend that page talks to, an open API would leak that data to anyone who finds the URL. A lightweight shared-password gate (Worker-issued token, checked on every API call) was added to close that gap. This is not full multi-user auth — it's a single shared password appropriate for a single-admin internal tool — noted here so it isn't mistaken for something stronger later.
+**Security note:** the frontend is a public, unauthenticated static site on GitHub Pages. Once real customer PII (names, phones, addresses) starts flowing through a backend that page talks to, an open API would leak that data to anyone who finds the URL. A gate (Worker-issued token, checked on every API call) was added to close that gap — see the addendum below for how it evolved from a single shared password into per-admin email/password logins.
 
 **Deploy dependency:** deploying the Worker requires a Cloudflare account login (`wrangler login`) or an API token — Claude cannot create accounts or complete interactive OAuth on Amit's behalf, so this step is Amit's to run. See README for exact commands.
+
+## 11. Addendum — Per-admin email/password logins (added 2026-08-24)
+
+**Goal:** replace the single shared admin password with real accounts — each admin signs in with their own email and password, from a link in the axiom-hvac.com top bar and footer.
+
+**Decisions:**
+- **No public sign-up.** Admin accounts are created by running `server/scripts/create-admin.mjs` locally (hashes the password, prints a SQL `INSERT`, you run it against D1 yourself) — appropriate for a small, known set of admins on an internal tool, not a public product.
+- **Storage:** a new `users` table in the same D1 database (`migrations/0002_users.sql`) — `email` (unique), `password_hash`, `password_salt`, `created_at`.
+- **Hashing:** PBKDF2-HMAC-SHA256, 100,000 iterations, random 16-byte salt per user, via the Web Crypto API (`server/src/passwords.ts`). No native/WASM dependency, so the exact same code runs in both the Worker and the plain-Node seeding script.
+- **Session tokens:** `/api/login` now takes `{ email, password }`, looks the user up in D1, verifies the hash, and issues an HMAC-signed token that carries the verified email as its payload (`server/src/auth.ts`) instead of being tied to a single shared secret string.
+- **`ADMIN_PASSWORD` secret retired.** Only `SESSION_SECRET` remains — it signs tokens, it doesn't gate login on its own anymore.

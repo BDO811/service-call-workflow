@@ -1,11 +1,12 @@
 import PostalMime from 'postal-mime'
 import { parseServiceOrderEmail } from './parser.ts'
 import { insertInboxOrder, listUnpulledInboxOrders, markPulled } from './inboxDb.ts'
-import { issueToken, verifyToken, extractBearerToken } from './auth.ts'
+import { findUserByEmail } from './usersDb.ts'
+import { verifyPassword } from './passwords.ts'
+import { issueToken, verifyToken, extractBearerToken, type TokenIdentity } from './auth.ts'
 
 export interface Env {
   DB: D1Database
-  ADMIN_PASSWORD: string
   SESSION_SECRET: string
   ALLOWED_ORIGINS?: string
 }
@@ -37,7 +38,7 @@ function json(data: unknown, init: ResponseInit = {}): Response {
   })
 }
 
-async function requireAuth(request: Request, env: Env): Promise<boolean> {
+async function requireAuth(request: Request, env: Env): Promise<TokenIdentity | null> {
   const token = extractBearerToken(request)
   return verifyToken(env.SESSION_SECRET, token)
 }
@@ -57,11 +58,15 @@ export default {
 
     try {
       if (url.pathname === '/api/login' && request.method === 'POST') {
-        const body = (await request.json()) as { password?: string }
-        if (!body.password || body.password !== env.ADMIN_PASSWORD) {
-          return respond(json({ error: 'Invalid password' }, { status: 401 }))
+        const body = (await request.json()) as { email?: string; password?: string }
+        if (!body.email || !body.password) {
+          return respond(json({ error: 'Email and password are required' }, { status: 400 }))
         }
-        const token = await issueToken(env.SESSION_SECRET)
+        const user = await findUserByEmail(env.DB, body.email)
+        if (!user || !(await verifyPassword(body.password, user.password_hash, user.password_salt))) {
+          return respond(json({ error: 'Invalid email or password' }, { status: 401 }))
+        }
+        const token = await issueToken(env.SESSION_SECRET, user.email)
         return respond(json({ token }))
       }
 

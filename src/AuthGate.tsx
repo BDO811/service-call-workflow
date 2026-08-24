@@ -4,6 +4,7 @@ import { syncInboxOrders } from './emailSync'
 
 export default function AuthGate({ children }: { children: ReactNode }) {
   const [authed, setAuthed] = useState(!syncEnabled || Boolean(getToken()))
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
 
@@ -14,12 +15,12 @@ export default function AuthGate({ children }: { children: ReactNode }) {
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setError('')
-    const ok = await login(password)
+    const ok = await login(email, password)
     if (ok) {
       setAuthed(true)
       syncInboxOrders()
     } else {
-      setError('Wrong password, or the sync backend is unreachable.')
+      setError('Wrong email or password, or the sync backend is unreachable.')
     }
   }
 
@@ -29,17 +30,25 @@ export default function AuthGate({ children }: { children: ReactNode }) {
     <div className="auth-gate">
       <form className="auth-form" onSubmit={handleSubmit}>
         <h1>Service Call Workflow</h1>
-        <p className="muted">This app syncs real customer data from a connected inbox. Enter the admin password to continue.</p>
+        <p className="muted">This app syncs real customer data from a connected inbox. Sign in with your admin account to continue.</p>
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          autoFocus
+          autoComplete="username"
+        />
         <input
           type="password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          autoFocus
+          autoComplete="current-password"
         />
         {error && <p className="auth-error">{error}</p>}
         <button type="submit" className="btn btn-primary">
-          Unlock
+          Sign In
         </button>
       </form>
     </div>

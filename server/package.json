@@ -8,6 +8,9 @@
     "deploy": "wrangler deploy",
     "db:migrate:local": "wrangler d1 execute service-call-workflow-db --local --file=./migrations/0001_init.sql",
     "db:migrate:remote": "wrangler d1 execute service-call-workflow-db --remote --file=./migrations/0001_init.sql",
+    "db:migrate:local:users": "wrangler d1 execute service-call-workflow-db --local --file=./migrations/0002_users.sql",
+    "db:migrate:remote:users": "wrangler d1 execute service-call-workflow-db --remote --file=./migrations/0002_users.sql",
+    "create-admin": "node scripts/create-admin.mjs",
     "test:parser": "node --experimental-strip-types src/parser.test.ts"
   },
   "dependencies": {

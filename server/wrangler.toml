@@ -3,14 +3,14 @@ main = "src/index.ts"
 compatibility_date = "2026-08-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Created by `wrangler d1 create service-call-workflow-db` — paste the
-# returned database_id below before deploying. See server/README.md.
+# Created by `wrangler d1 create service-call-workflow-db`. See server/README.md.
 [[d1_databases]]
 binding = "DB"
 database_name = "service-call-workflow-db"
 database_id = "50521af3-058e-476c-8103-632f4eeaeb25"
 
-# Set with: wrangler secret put ADMIN_PASSWORD
-#           wrangler secret put SESSION_SECRET
-# Never commit real values here — these two are read from the Cloudflare
-# secret store at runtime, not from this file.
+# Set with: wrangler secret put SESSION_SECRET
+# Never commit the real value here — it's read from the Cloudflare secret
+# store at runtime, not from this file. Per-admin logins (email + password)
+# live in the `users` D1 table instead of a shared secret — see
+# scripts/create-admin.mjs.

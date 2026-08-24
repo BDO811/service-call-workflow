@@ -20,7 +20,8 @@ npm install
 # 1. Log into Cloudflare (opens a browser)
 npx wrangler login
 
-# 2. Create the D1 database
+# 2. Create the D1 database (skip if you already ran this — check wrangler.toml,
+#    if database_id is already filled in, it's done)
 npx wrangler d1 create service-call-workflow-db
 ```
 
@@ -28,11 +29,14 @@ That last command prints a `database_id` — paste it into `wrangler.toml`,
 replacing `REPLACE_WITH_D1_DATABASE_ID`.
 
 ```bash
-# 3. Run the schema migration against the real (remote) database
-npm run db:migrate:remote
+# 3. Run the schema migrations against the real (remote) database.
+#    If you already ran db:migrate:remote before today, only run the second
+#    one — re-running 0001 against a database that already has it will error
+#    ("table already exists").
+npm run db:migrate:remote          # inbox_orders table
+npm run db:migrate:remote:users    # users table (admin logins)
 
-# 4. Set the two secrets (you'll be prompted to type each value)
-npx wrangler secret put ADMIN_PASSWORD      # the password the app will ask for
+# 4. Set the session secret (you'll be prompted to type the value)
 npx wrangler secret put SESSION_SECRET      # any long random string, e.g. `openssl rand -hex 32`
 
 # 5. Deploy
@@ -41,6 +45,22 @@ npm run deploy
 
 Deploy prints your Worker's URL — something like
 `https://service-call-workflow-api.<your-subdomain>.workers.dev`.
+
+## Admin logins
+
+There's no shared password and no public sign-up — each admin gets their own
+email + password, stored (hashed, never in plaintext) in the `users` D1 table.
+To add yourself as the first admin:
+
+```bash
+node scripts/create-admin.mjs "you@example.com" "your-password" > /tmp/add-admin.sql
+npx wrangler d1 execute service-call-workflow-db --remote --file=/tmp/add-admin.sql
+rm /tmp/add-admin.sql
+```
+
+Run it again with a different email any time you want to add another admin.
+The password never leaves your machine — the script only hashes it locally
+and prints the INSERT statement for the row.
 
 ## Wire the frontend to it
 
@@ -79,7 +99,10 @@ page's "paste email to test" panel to try it with real samples.
 ```bash
 cd server
 npm run db:migrate:local          # sets up a local D1 emulation
-cp .dev.vars.example .dev.vars    # then edit ADMIN_PASSWORD / SESSION_SECRET
+npm run db:migrate:local:users    # users table, local
+cp .dev.vars.example .dev.vars    # then edit SESSION_SECRET
+node scripts/create-admin.mjs "you@example.com" "your-password"   # prints INSERT SQL
+npx wrangler d1 execute service-call-workflow-db --local --command "<paste the printed INSERT here>"
 npm run dev                       # starts the Worker on http://localhost:8787
 ```
 
