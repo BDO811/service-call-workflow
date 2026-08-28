@@ -46,6 +46,9 @@ export default function Dashboard() {
             <tr>
               <th>Claim #</th>
               <th>Customer</th>
+              <th>Issue</th>
+              <th>Preferred Dates</th>
+              <th>Cost</th>
               <th>Status</th>
               <th>Last Updated</th>
             </tr>
@@ -57,6 +60,15 @@ export default function Dashboard() {
                   <Link to={`/orders/${o.id}`}>{o.claimNumber || `#${o.id}`}</Link>
                 </td>
                 <td>{customerName(o.customerId)}</td>
+                <td className="truncate" title={o.reportedProblem}>
+                  {o.reportedProblem || '—'}
+                </td>
+                <td className="truncate" title={o.appointmentPreference}>
+                  {o.appointmentPreference || '—'}
+                </td>
+                <td className="truncate" title={`Authorization: ${o.authorizationLimit}\nRate: ${o.repairRate}`}>
+                  {o.authorizationLimit || o.repairRate || '—'}
+                </td>
                 <td>
                   <span className={`status-pill status-${o.status.replace(/\s+/g, '-')}`}>{o.status}</span>
                 </td>
