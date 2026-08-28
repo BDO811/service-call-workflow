@@ -17,7 +17,7 @@ export default function Dashboard() {
     .sort((a, b) => b.updatedAt - a.updatedAt)
     .slice(0, 8)
 
-  const customerName = (id: number) => customers.find((c) => c.id === id)?.name ?? 'Unknown'
+  const customerFor = (id: number) => customers.find((c) => c.id === id)
 
   return (
     <div>
@@ -44,6 +44,7 @@ export default function Dashboard() {
         <table className="table">
           <thead>
             <tr>
+              <th>Dispatched By</th>
               <th>Claim #</th>
               <th>Customer</th>
               <th>Issue</th>
@@ -54,27 +55,48 @@ export default function Dashboard() {
             </tr>
           </thead>
           <tbody>
-            {recent.map((o) => (
-              <tr key={o.id}>
-                <td>
-                  <Link to={`/orders/${o.id}`}>{o.claimNumber || `#${o.id}`}</Link>
-                </td>
-                <td>{customerName(o.customerId)}</td>
-                <td className="truncate" title={o.reportedProblem}>
-                  {o.reportedProblem || '—'}
-                </td>
-                <td className="truncate" title={o.appointmentPreference}>
-                  {o.appointmentPreference || '—'}
-                </td>
-                <td className="truncate" title={`Authorization: ${o.authorizationLimit}\nRate: ${o.repairRate}`}>
-                  {o.authorizationLimit || o.repairRate || '—'}
-                </td>
-                <td>
-                  <span className={`status-pill status-${o.status.replace(/\s+/g, '-')}`}>{o.status}</span>
-                </td>
-                <td>{new Date(o.updatedAt).toLocaleString()}</td>
-              </tr>
-            ))}
+            {recent.map((o) => {
+              const customer = customerFor(o.customerId)
+              return (
+                <tr key={o.id}>
+                  <td className="wrap-cell">
+                    {o.vendorName && <div>{o.vendorName}</div>}
+                    {o.vendorContactName && <div>{o.vendorContactName}</div>}
+                    {o.vendorEmail && (
+                      <div>
+                        <a href={`mailto:${o.vendorEmail}`}>{o.vendorEmail}</a>
+                      </div>
+                    )}
+                    {!o.vendorName && !o.vendorContactName && !o.vendorEmail && '—'}
+                  </td>
+                  <td>
+                    <Link to={`/orders/${o.id}`}>{o.claimNumber || `#${o.id}`}</Link>
+                  </td>
+                  <td className="wrap-cell">
+                    {customer ? <Link to={`/customers/${customer.id}`}>{customer.name}</Link> : 'Unknown'}
+                  </td>
+                  <td className="wrap-cell">{o.reportedProblem || '—'}</td>
+                  <td className="wrap-cell">
+                    {o.appointmentPreference
+                      ? o.appointmentPreference
+                          .split(';')
+                          .map((d) => d.trim())
+                          .filter(Boolean)
+                          .map((d, i) => <div key={i}>{d}</div>)
+                      : '—'}
+                  </td>
+                  <td className="wrap-cell">
+                    {o.authorizationLimit && <div>{o.authorizationLimit}</div>}
+                    {o.repairRate && <div>{o.repairRate}</div>}
+                    {!o.authorizationLimit && !o.repairRate && '—'}
+                  </td>
+                  <td>
+                    <span className={`status-pill status-${o.status.replace(/\s+/g, '-')}`}>{o.status}</span>
+                  </td>
+                  <td>{new Date(o.updatedAt).toLocaleString()}</td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       )}

@@ -24,6 +24,9 @@ export default function NewOrder() {
     authorizationLimit: '',
     repairRate: '',
     notes: '',
+    vendorName: '',
+    vendorContactName: '',
+    vendorEmail: '',
   })
 
   const set = (key: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -74,8 +77,9 @@ export default function NewOrder() {
       updatedAt: now,
       activityLog: [{ ts: now, note: 'Service order created.' }],
       source: 'manual',
-      vendorName: '',
-      vendorEmail: '',
+      vendorName: form.vendorName,
+      vendorContactName: form.vendorContactName,
+      vendorEmail: form.vendorEmail,
       needsReview: false,
       rawEmailText: '',
     })
@@ -153,6 +157,24 @@ export default function NewOrder() {
               </div>
             </>
           )}
+        </section>
+
+        <section className="form-section">
+          <h2>Dispatched By</h2>
+          <div className="field-row">
+            <div className="field">
+              <label>Company</label>
+              <input value={form.vendorName} onChange={set('vendorName')} placeholder="e.g. Armadillo Home Solutions" />
+            </div>
+            <div className="field">
+              <label>Contact Name</label>
+              <input value={form.vendorContactName} onChange={set('vendorContactName')} placeholder="e.g. Sam Robinson" />
+            </div>
+            <div className="field">
+              <label>Contact Email</label>
+              <input type="email" value={form.vendorEmail} onChange={set('vendorEmail')} />
+            </div>
+          </div>
         </section>
 
         <section className="form-section">

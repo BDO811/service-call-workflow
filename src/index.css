@@ -193,6 +193,7 @@ h2 {
   text-align: left;
   padding: 10px 14px;
   border-bottom: 1px solid var(--border);
+  vertical-align: top;
 }
 
 .table th {
@@ -212,6 +213,16 @@ h2 {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.table td.wrap-cell {
+  max-width: 220px;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.table td.wrap-cell div + div {
+  margin-top: 4px;
 }
 
 /* Status pill */
@@ -421,6 +432,10 @@ textarea {
   gap: 16px;
 }
 
+.detail-grid .card-full {
+  grid-column: 1 / -1;
+}
+
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -453,11 +468,20 @@ textarea {
 }
 
 .doc-list,
-.activity-list {
+.activity-list,
+.systems-list {
   list-style: none;
   margin: 0;
   padding: 0;
   font-size: 13px;
+}
+
+.systems-list li {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.systems-list li:last-child {
+  border-bottom: none;
 }
 
 .doc-list li {

@@ -46,6 +46,19 @@ export default function CustomerDetail() {
     navigate('/customers')
   }
 
+  const systems = orders
+    ? Array.from(
+        new Set(
+          orders
+            .map((o) => {
+              const parts = [o.brand, o.model].filter(Boolean).join(' ')
+              return o.serial ? `${parts} (S/N ${o.serial})` : parts
+            })
+            .filter(Boolean),
+        ),
+      )
+    : []
+
   if (!customer || !orders) return <p>Loading…</p>
 
   return (
@@ -97,9 +110,9 @@ export default function CustomerDetail() {
           ) : (
             <dl className="detail-list">
               <dt>Phone</dt>
-              <dd>{customer.phone || '—'}</dd>
+              <dd>{customer.phone ? <a href={`tel:${customer.phone}`}>{customer.phone}</a> : '—'}</dd>
               <dt>Email</dt>
-              <dd>{customer.email || '—'}</dd>
+              <dd>{customer.email ? <a href={`mailto:${customer.email}`}>{customer.email}</a> : '—'}</dd>
               <dt>Service Address</dt>
               <dd>{customer.address || '—'}</dd>
               <dt>Notes</dt>
@@ -109,6 +122,19 @@ export default function CustomerDetail() {
         </section>
 
         <section className="card">
+          <h2>Systems on File</h2>
+          {systems.length === 0 ? (
+            <p className="muted">No equipment recorded yet.</p>
+          ) : (
+            <ul className="systems-list">
+              {systems.map((s, i) => (
+                <li key={i}>{s}</li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="card card-full">
           <h2>Job History</h2>
           {orders.length === 0 ? (
             <p className="muted">No service orders yet.</p>
@@ -118,6 +144,7 @@ export default function CustomerDetail() {
                 <tr>
                   <th>Claim #</th>
                   <th>Covered Item</th>
+                  <th>Dispatched By</th>
                   <th>Status</th>
                   <th>Created</th>
                 </tr>
@@ -129,6 +156,16 @@ export default function CustomerDetail() {
                       <Link to={`/orders/${o.id}`}>{o.claimNumber || `#${o.id}`}</Link>
                     </td>
                     <td>{[o.brand, o.model].filter(Boolean).join(' ') || '—'}</td>
+                    <td className="wrap-cell">
+                      {o.vendorName && <div>{o.vendorName}</div>}
+                      {o.vendorContactName && <div>{o.vendorContactName}</div>}
+                      {o.vendorEmail && (
+                        <div>
+                          <a href={`mailto:${o.vendorEmail}`}>{o.vendorEmail}</a>
+                        </div>
+                      )}
+                      {!o.vendorName && !o.vendorContactName && !o.vendorEmail && '—'}
+                    </td>
                     <td>
                       <span className={`status-pill status-${o.status.replace(/\s+/g, '-')}`}>{o.status}</span>
                     </td>

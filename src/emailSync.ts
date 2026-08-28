@@ -48,6 +48,7 @@ export async function syncInboxOrders(): Promise<number> {
       updatedAt: now,
       source: 'email',
       vendorName: o.vendor_name,
+      vendorContactName: '',
       vendorEmail: o.vendor_email,
       needsReview: Boolean(o.needs_review),
       rawEmailText: o.raw_text,

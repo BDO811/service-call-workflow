@@ -21,6 +21,9 @@ export default function WorkOrderDetail() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [showReport, setShowReport] = useState(false)
 
+  const [editingVendor, setEditingVendor] = useState(false)
+  const [vendorForm, setVendorForm] = useState({ vendorName: '', vendorContactName: '', vendorEmail: '' })
+
   const techNameValue = techName || order?.technicianName || ''
   const techContactValue = techContact || order?.technicianContact || ''
 
@@ -77,6 +80,26 @@ export default function WorkOrderDetail() {
       activityLog: logActivity(order, `Report sent to technician${techContactValue ? ` (${techContactValue})` : ''}.`),
     })
     window.location.href = `mailto:${order.technicianContact || ''}?subject=${subject}&body=${body}`
+  }
+
+  function startEditVendor() {
+    if (!order) return
+    setVendorForm({
+      vendorName: order.vendorName,
+      vendorContactName: order.vendorContactName,
+      vendorEmail: order.vendorEmail,
+    })
+    setEditingVendor(true)
+  }
+
+  async function saveVendor() {
+    if (!order) return
+    await db.workOrders.update(order.id!, {
+      ...vendorForm,
+      updatedAt: Date.now(),
+      activityLog: logActivity(order, `Dispatched-by info updated.`),
+    })
+    setEditingVendor(false)
   }
 
   async function markReviewed() {
@@ -245,21 +268,62 @@ export default function WorkOrderDetail() {
           </ul>
         </section>
 
-        {order.source === 'email' && (
-          <section className="card">
-            <h2>Source Email</h2>
-            <dl className="detail-list">
-              <dt>Vendor</dt>
-              <dd>{order.vendorName || '—'}</dd>
-              <dt>Vendor Email</dt>
-              <dd>{order.vendorEmail || '—'}</dd>
-            </dl>
+        <section className="card">
+          <h2>Dispatched By</h2>
+          {editingVendor ? (
+            <>
+              <div className="field">
+                <label>Company</label>
+                <input
+                  value={vendorForm.vendorName}
+                  onChange={(e) => setVendorForm({ ...vendorForm, vendorName: e.target.value })}
+                />
+              </div>
+              <div className="field">
+                <label>Contact Name</label>
+                <input
+                  value={vendorForm.vendorContactName}
+                  onChange={(e) => setVendorForm({ ...vendorForm, vendorContactName: e.target.value })}
+                />
+              </div>
+              <div className="field">
+                <label>Contact Email</label>
+                <input
+                  type="email"
+                  value={vendorForm.vendorEmail}
+                  onChange={(e) => setVendorForm({ ...vendorForm, vendorEmail: e.target.value })}
+                />
+              </div>
+              <div className="form-actions">
+                <button className="btn btn-primary" onClick={saveVendor}>
+                  Save
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <dl className="detail-list">
+                <dt>Company</dt>
+                <dd>{order.vendorName || '—'}</dd>
+                <dt>Contact</dt>
+                <dd>{order.vendorContactName || '—'}</dd>
+                <dt>Email</dt>
+                <dd>{order.vendorEmail ? <a href={`mailto:${order.vendorEmail}`}>{order.vendorEmail}</a> : '—'}</dd>
+              </dl>
+              <div className="form-actions">
+                <button className="btn" onClick={startEditVendor}>
+                  Edit
+                </button>
+              </div>
+            </>
+          )}
+          {order.source === 'email' && (
             <details>
               <summary className="link-btn">View raw email</summary>
               <pre className="report-preview">{order.rawEmailText}</pre>
             </details>
-          </section>
-        )}
+          )}
+        </section>
 
         <section className="card">
           <h2>Activity Log</h2>
