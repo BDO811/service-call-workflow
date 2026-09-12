@@ -21,10 +21,13 @@ database_id = "50521af3-058e-476c-8103-632f4eeaeb25"
 [vars]
 JEFF_EMAIL = "jeff@myhomesa.com"
 TECH_EMAIL = "jeff@myhomesa.com"
-RESEND_FROM_EMAIL = ""
+# The Google account that sends the notify emails via Gmail's SMTP relay —
+# needs 2-Step Verification on so it can generate an App Password. See
+# server/README.md.
+GMAIL_USER = ""
 GEMINI_MODEL = "gemini-2.5-flash"
 
 # API keys (secret — set with `wrangler secret put`, never put the real
 # value here):
-#   wrangler secret put GEMINI_API_KEY   # OCR + field extraction
-#   wrangler secret put RESEND_API_KEY   # sends the Jeff/tech emails
+#   wrangler secret put GEMINI_API_KEY       # OCR + field extraction
+#   wrangler secret put GMAIL_APP_PASSWORD   # sends the Jeff/tech emails

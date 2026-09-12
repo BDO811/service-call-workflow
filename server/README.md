@@ -76,34 +76,41 @@ the live site will pick up the login gate and Email Sync page automatically.
 For local dev, put the same value in `.env` at the repo root
 (`VITE_SYNC_API_URL=...`), copied from `.env.example`.
 
-## OCR extraction + auto-notify (Gemini + Resend)
+## OCR extraction + auto-notify (Gemini + Gmail SMTP)
 
 Every inbound email is extracted with Gemini (free tier) first — it reads the
 email text *and* any image/PDF attachments directly (that's the OCR step:
 photographed or scanned dispatch sheets get read the same as plain text), and
 falls back automatically to the regex parser if Gemini errors or isn't
-configured. Once an order is captured, it auto-emails Jeff and the tech via
-Resend. Both are optional — leave the keys/vars unset and the app behaves
-exactly as before (regex-only parsing, no auto-emails).
+configured. Once an order is captured, it auto-emails Jeff and the tech by
+sending through Gmail's SMTP relay with an account App Password (see
+`server/src/smtp.ts`) — no third-party email API or account, just a Google
+account you already have. Both extraction and notify are optional — leave the
+keys/vars unset and the app behaves exactly as before (regex-only parsing, no
+auto-emails).
 
 1. **Gemini API key** (free): go to https://aistudio.google.com/apikey, create
    a key, then:
    ```bash
    npx wrangler secret put GEMINI_API_KEY
    ```
-2. **Resend** (free tier: 100 emails/day, 3,000/month): sign up at
-   https://resend.com, verify a sending domain (or use their shared test
-   domain while testing), then:
-   ```bash
-   npx wrangler secret put RESEND_API_KEY
-   ```
+2. **Gmail App Password** (free, no signup): pick the Google account that
+   should send these emails (it can be `jeff@myhomesa.com` if that address is
+   Gmail/Google Workspace-hosted, or any other Gmail account — the "To" and
+   "From" addresses don't have to match).
+   - Turn on 2-Step Verification if it isn't already: https://myaccount.google.com/security
+   - Generate an App Password at https://myaccount.google.com/apppasswords
+     (choose "Mail" as the app) — copy the 16-character password.
+   - `npx wrangler secret put GMAIL_APP_PASSWORD` and paste it.
+   - Free within Gmail's own sending limits (500/day personal, 2,000/day
+     Workspace) — trivial for this app's volume.
 3. **Fill in the business config** in `wrangler.toml` under `[vars]` and
    redeploy:
    - `JEFF_EMAIL` — who currently reviews new orders (e.g. `jeff@myhomesa.com`)
    - `TECH_EMAIL` — the fixed tech recipient (an inbox, or a carrier's
      email-to-SMS gateway like `5551234567@vtext.com` if you want it to land
-     as a text)
-   - `RESEND_FROM_EMAIL` — a verified sender on your Resend domain
+     as a text) — can be the same address as `JEFF_EMAIL`, they're deduped
+   - `GMAIL_USER` — the Gmail address from step 2
 4. **Run the new migration** (adds columns tracking how each order was
    extracted and whether the notify emails sent):
    ```bash
@@ -111,7 +118,7 @@ exactly as before (regex-only parsing, no auto-emails).
    ```
 5. `npm run deploy`
 
-Any Gemini or Resend failure is caught and logged per-order (visible via
+Any Gemini or Gmail-send failure is caught and logged per-order (visible via
 `wrangler tail`) — the order is always saved to D1 first, regardless of
 whether extraction fell back to regex or the notify emails failed to send.
 

@@ -13,9 +13,10 @@ export interface Env {
   // OCR + field extraction (server/src/extract.ts). Unset = regex-only parser.
   GEMINI_API_KEY?: string
   GEMINI_MODEL?: string
-  // Auto-notify on new orders (server/src/notify.ts). Unset = no emails sent.
-  RESEND_API_KEY?: string
-  RESEND_FROM_EMAIL?: string
+  // Auto-notify on new orders (server/src/notify.ts, via server/src/smtp.ts).
+  // Unset = no emails sent.
+  GMAIL_USER?: string
+  GMAIL_APP_PASSWORD?: string
   JEFF_EMAIL?: string
   TECH_EMAIL?: string
 }

@@ -2,5 +2,7 @@ SESSION_SECRET=change-me-too-any-long-random-string
 
 # Free at aistudio.google.com/apikey — used for OCR + field extraction.
 GEMINI_API_KEY=your-gemini-api-key
-# Free tier at resend.com — used to send the Jeff/tech auto-notify emails.
-RESEND_API_KEY=your-resend-api-key
+# Generate at myaccount.google.com/apppasswords (requires 2-Step Verification
+# on) for the account set as GMAIL_USER in wrangler.toml — used to send the
+# Jeff/tech auto-notify emails via Gmail's SMTP relay.
+GMAIL_APP_PASSWORD=your-16-char-app-password
