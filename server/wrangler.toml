@@ -24,7 +24,7 @@ TECH_EMAIL = "jeff@myhomesa.com"
 # The Google account that sends the notify emails via Gmail's SMTP relay —
 # needs 2-Step Verification on so it can generate an App Password. See
 # server/README.md.
-GMAIL_USER = ""
+GMAIL_USER = "mehta@helix.harvard7.net"
 GEMINI_MODEL = "gemini-2.5-flash"
 
 # API keys (secret — set with `wrangler secret put`, never put the real
