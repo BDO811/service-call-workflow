@@ -65,7 +65,9 @@ export async function notifyNewOrder(env: NotifyEnv, order: ParsedOrder, subject
     return { sentTo: [], errors: ['Resend not configured (RESEND_API_KEY/RESEND_FROM_EMAIL unset) — skipped'] }
   }
 
-  const recipients = [env.JEFF_EMAIL, env.TECH_EMAIL].filter((r): r is string => Boolean(r))
+  // Dedupe: Jeff and the tech are sometimes the same inbox, and that must
+  // never mean sending the identical email to them twice.
+  const recipients = [...new Set([env.JEFF_EMAIL, env.TECH_EMAIL].filter((r): r is string => Boolean(r)))]
   if (recipients.length === 0) {
     return { sentTo: [], errors: ['No recipients configured (JEFF_EMAIL/TECH_EMAIL unset) — skipped'] }
   }

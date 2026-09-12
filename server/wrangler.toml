@@ -19,8 +19,8 @@ database_id = "50521af3-058e-476c-8103-632f4eeaeb25"
 # not secret, safe to commit. Leave blank to keep that feature a no-op.
 # See server/README.md for how to fill these in.
 [vars]
-JEFF_EMAIL = ""
-TECH_EMAIL = ""
+JEFF_EMAIL = "jeff@myhomesa.com"
+TECH_EMAIL = "jeff@myhomesa.com"
 RESEND_FROM_EMAIL = ""
 GEMINI_MODEL = "gemini-2.5-flash"
 
