@@ -14,3 +14,17 @@ database_id = "50521af3-058e-476c-8103-632f4eeaeb25"
 # store at runtime, not from this file. Per-admin logins (email + password)
 # live in the `users` D1 table instead of a shared secret — see
 # scripts/create-admin.mjs.
+
+# Business config for auto OCR-extraction + auto-notify (added 2026-09-12) —
+# not secret, safe to commit. Leave blank to keep that feature a no-op.
+# See server/README.md for how to fill these in.
+[vars]
+JEFF_EMAIL = ""
+TECH_EMAIL = ""
+RESEND_FROM_EMAIL = ""
+GEMINI_MODEL = "gemini-2.5-flash"
+
+# API keys (secret — set with `wrangler secret put`, never put the real
+# value here):
+#   wrangler secret put GEMINI_API_KEY   # OCR + field extraction
+#   wrangler secret put RESEND_API_KEY   # sends the Jeff/tech emails

@@ -76,6 +76,45 @@ the live site will pick up the login gate and Email Sync page automatically.
 For local dev, put the same value in `.env` at the repo root
 (`VITE_SYNC_API_URL=...`), copied from `.env.example`.
 
+## OCR extraction + auto-notify (Gemini + Resend)
+
+Every inbound email is extracted with Gemini (free tier) first — it reads the
+email text *and* any image/PDF attachments directly (that's the OCR step:
+photographed or scanned dispatch sheets get read the same as plain text), and
+falls back automatically to the regex parser if Gemini errors or isn't
+configured. Once an order is captured, it auto-emails Jeff and the tech via
+Resend. Both are optional — leave the keys/vars unset and the app behaves
+exactly as before (regex-only parsing, no auto-emails).
+
+1. **Gemini API key** (free): go to https://aistudio.google.com/apikey, create
+   a key, then:
+   ```bash
+   npx wrangler secret put GEMINI_API_KEY
+   ```
+2. **Resend** (free tier: 100 emails/day, 3,000/month): sign up at
+   https://resend.com, verify a sending domain (or use their shared test
+   domain while testing), then:
+   ```bash
+   npx wrangler secret put RESEND_API_KEY
+   ```
+3. **Fill in the business config** in `wrangler.toml` under `[vars]` and
+   redeploy:
+   - `JEFF_EMAIL` — who currently reviews new orders (e.g. `jeff@myhomesa.com`)
+   - `TECH_EMAIL` — the fixed tech recipient (an inbox, or a carrier's
+     email-to-SMS gateway like `5551234567@vtext.com` if you want it to land
+     as a text)
+   - `RESEND_FROM_EMAIL` — a verified sender on your Resend domain
+4. **Run the new migration** (adds columns tracking how each order was
+   extracted and whether the notify emails sent):
+   ```bash
+   npm run db:migrate:remote:extraction
+   ```
+5. `npm run deploy`
+
+Any Gemini or Resend failure is caught and logged per-order (visible via
+`wrangler tail`) — the order is always saved to D1 first, regardless of
+whether extraction fell back to regex or the notify emails failed to send.
+
 ## Connecting a real inbox (do this whenever you're ready)
 
 The Worker exposes a native `email()` handler — Cloudflare can deliver mail

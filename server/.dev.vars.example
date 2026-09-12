@@ -1,1 +1,6 @@
 SESSION_SECRET=change-me-too-any-long-random-string
+
+# Free at aistudio.google.com/apikey — used for OCR + field extraction.
+GEMINI_API_KEY=your-gemini-api-key
+# Free tier at resend.com — used to send the Jeff/tech auto-notify emails.
+RESEND_API_KEY=your-resend-api-key

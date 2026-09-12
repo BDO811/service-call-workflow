@@ -1,4 +1,5 @@
 import type { ParsedOrder } from './parser.ts'
+import type { NotifyResult } from './notify.ts'
 
 export interface InboxOrderRow {
   id: string
@@ -24,12 +25,23 @@ export interface InboxOrderRow {
   missing_fields: string
   pulled: number
   pulled_at: number | null
+  extraction_method: string
+  extraction_error: string
+  notified_to: string
+  notify_errors: string
+  notified_at: number | null
 }
 
 export async function insertInboxOrder(
   db: D1Database,
   parsed: ParsedOrder,
-  meta: { subject: string; rawText: string; receivedAt: number },
+  meta: {
+    subject: string
+    rawText: string
+    receivedAt: number
+    extractionMethod?: 'gemini' | 'regex'
+    extractionError?: string
+  },
 ): Promise<string> {
   const id = crypto.randomUUID()
   await db
@@ -38,8 +50,9 @@ export async function insertInboxOrder(
         id, received_at, vendor_name, vendor_email, subject, raw_text,
         claim_number, customer_name, customer_phone, customer_email, customer_address,
         brand, model, serial, reported_problem, appointment_preference,
-        authorization_limit, repair_rate, notes, needs_review, missing_fields, pulled
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0)`,
+        authorization_limit, repair_rate, notes, needs_review, missing_fields, pulled,
+        extraction_method, extraction_error
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?)`,
     )
     .bind(
       id,
@@ -63,9 +76,18 @@ export async function insertInboxOrder(
       parsed.notes,
       parsed.needsReview ? 1 : 0,
       JSON.stringify(parsed.missingFields),
+      meta.extractionMethod ?? 'regex',
+      meta.extractionError ?? '',
     )
     .run()
   return id
+}
+
+export async function recordNotifyResult(db: D1Database, id: string, result: NotifyResult): Promise<void> {
+  await db
+    .prepare(`UPDATE inbox_orders SET notified_to = ?, notify_errors = ?, notified_at = ? WHERE id = ?`)
+    .bind(JSON.stringify(result.sentTo), JSON.stringify(result.errors), Date.now(), id)
+    .run()
 }
 
 export async function listUnpulledInboxOrders(db: D1Database, limit = 100): Promise<InboxOrderRow[]> {
