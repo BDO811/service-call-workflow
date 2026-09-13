@@ -10,6 +10,8 @@
     "db:migrate:remote": "wrangler d1 execute service-call-workflow-db --remote --file=./migrations/0001_init.sql",
     "db:migrate:local:users": "wrangler d1 execute service-call-workflow-db --local --file=./migrations/0002_users.sql",
     "db:migrate:remote:users": "wrangler d1 execute service-call-workflow-db --remote --file=./migrations/0002_users.sql",
+    "db:migrate:local:extraction": "wrangler d1 execute service-call-workflow-db --local --file=./migrations/0003_extraction_notify.sql",
+    "db:migrate:remote:extraction": "wrangler d1 execute service-call-workflow-db --remote --file=./migrations/0003_extraction_notify.sql",
     "create-admin": "node scripts/create-admin.mjs",
     "test:parser": "node --experimental-strip-types src/parser.test.ts"
   },

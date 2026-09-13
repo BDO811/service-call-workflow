@@ -1,6 +1,7 @@
 import PostalMime from 'postal-mime'
-import { parseServiceOrderEmail } from './parser.ts'
-import { insertInboxOrder, listUnpulledInboxOrders, markPulled } from './inboxDb.ts'
+import { extractOrder } from './extract.ts'
+import { notifyNewOrder } from './notify.ts'
+import { insertInboxOrder, listUnpulledInboxOrders, markPulled, recordNotifyResult } from './inboxDb.ts'
 import { findUserByEmail } from './usersDb.ts'
 import { verifyPassword } from './passwords.ts'
 import { issueToken, verifyToken, extractBearerToken, type TokenIdentity } from './auth.ts'
@@ -9,6 +10,15 @@ export interface Env {
   DB: D1Database
   SESSION_SECRET: string
   ALLOWED_ORIGINS?: string
+  // OCR + field extraction (server/src/extract.ts). Unset = regex-only parser.
+  GEMINI_API_KEY?: string
+  GEMINI_MODEL?: string
+  // Auto-notify on new orders (server/src/notify.ts, via server/src/smtp.ts).
+  // Unset = no emails sent.
+  GMAIL_USER?: string
+  GMAIL_APP_PASSWORD?: string
+  JEFF_EMAIL?: string
+  TECH_EMAIL?: string
 }
 
 const DEFAULT_ALLOWED_ORIGINS = [
@@ -89,17 +99,19 @@ export default {
         if (!body.fromHeader || !body.text) {
           return respond(json({ error: 'fromHeader and text are required' }, { status: 400 }))
         }
-        const parsed = parseServiceOrderEmail({
-          fromHeader: body.fromHeader,
-          subject: body.subject ?? '',
-          text: body.text,
-        })
+        const { order: parsed, method, error } = await extractOrder(
+          { fromHeader: body.fromHeader, subject: body.subject ?? '', text: body.text },
+          env.GEMINI_API_KEY,
+          env.GEMINI_MODEL,
+        )
         const id = await insertInboxOrder(env.DB, parsed, {
           subject: body.subject ?? '',
           rawText: body.text,
           receivedAt: Date.now(),
+          extractionMethod: method,
+          extractionError: error,
         })
-        return respond(json({ id, parsed }))
+        return respond(json({ id, parsed, extractionMethod: method }))
       }
 
       return respond(json({ error: 'Not found' }, { status: 404 }))
@@ -110,14 +122,36 @@ export default {
 
   // Native Cloudflare Email Routing trigger. Wire this up by adding a
   // "Route to Worker" rule for the address you want vendors/forwards to hit —
-  // see server/README.md.
+  // see server/README.md. On every message this: extracts fields (Gemini
+  // reads the body text plus any image/PDF attachments directly — that's the
+  // OCR step — falling back to the regex parser if Gemini is unavailable or
+  // unconfigured), stores the order, then emails Jeff and the tech
+  // (JEFF_EMAIL / TECH_EMAIL) a summary via Resend. A failure in extraction
+  // or notification never drops the order — it's always captured in D1 first.
   async email(message: ForwardableEmailMessage, env: Env): Promise<void> {
-    const parsedMime = await PostalMime.parse(message.raw)
+    const parsedMime = await PostalMime.parse(message.raw, { attachmentEncoding: 'base64' })
     const fromHeader = message.headers.get('from') ?? parsedMime.from?.address ?? message.from
     const subject = parsedMime.subject ?? ''
     const text = parsedMime.text ?? parsedMime.html ?? ''
+    const attachments = parsedMime.attachments
+      .filter((a) => typeof a.content === 'string' && a.content.length > 0)
+      .map((a) => ({ filename: a.filename ?? 'attachment', mimeType: a.mimeType, data: a.content as string }))
 
-    const parsed = parseServiceOrderEmail({ fromHeader, subject, text })
-    await insertInboxOrder(env.DB, parsed, { subject, rawText: text, receivedAt: Date.now() })
+    const { order: parsed, method, error } = await extractOrder(
+      { fromHeader, subject, text, attachments },
+      env.GEMINI_API_KEY,
+      env.GEMINI_MODEL,
+    )
+
+    const id = await insertInboxOrder(env.DB, parsed, {
+      subject,
+      rawText: text,
+      receivedAt: Date.now(),
+      extractionMethod: method,
+      extractionError: error,
+    })
+
+    const notifyResult = await notifyNewOrder(env, parsed, subject)
+    await recordNotifyResult(env.DB, id, notifyResult)
   },
 }
